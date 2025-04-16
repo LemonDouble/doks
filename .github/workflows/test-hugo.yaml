@@ -1,0 +1,54 @@
+name: Test Hugo Version Compatibility
+
+on:
+  push:
+    branches:
+      - test
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        hugo-version: [0.146.0, 0.145.0, 0.144.0, 0.143.0, 0.142.0, 0.141.0, 0.140.0, 0.139.0, 0.138.0, 0.137.0, 0.136.0, 0.135.0, 0.134.0, 0.133.0, 0.132.0, 0.131.0, 0.130.0, 0.129.0, 0.128.0, 0.127.0, 0.126.0, 0.125.0, 0.124.0, 0.123.0, 0.122.0, 0.121.0, 0.120.0, 0.119.0, 0.118.0, 0.117.0, 0.116.0, 0.115.0, 0.114.0, 0.113.0, 0.112.0, 0.111.0, 0.110.0, 0.109.0, 0.108.0, 0.107.0, 0.106.0, 0.105.0, 0.104.0, 0.103.0, 0.102.0, 0.101.0, 0.100.0]
+    env:
+      HUGO_VERSION: ${{ matrix.hugo-version }}
+    steps:
+      - name: Install Hugo CLI
+        run: |
+          wget -O ${{ runner.temp }}/hugo.deb https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb \
+          && sudo dpkg -i ${{ runner.temp }}/hugo.deb
+
+      - name: Install Dart Sass
+        run: sudo snap install dart-sass
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: install dependencies
+        run: |
+          npm install
+
+      - name: Build production website
+        env:
+          # For maximum backward compatibility with Hugo modules
+          HUGO_ENVIRONMENT: production
+          HUGO_ENV: production
+          TZ: Asia/Seoul
+        run: |
+          npm run build \
+          -- \
+          --baseURL "${{ steps.pages.outputs.base_url }}/"
